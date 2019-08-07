@@ -174,8 +174,6 @@ namespace BulkDirIcaclsGenerator
                 else
                 {
                 // Nie udało się odnaleźć grupy
-                }
-                {
                     OutputTextBox.Text += "Could not find group " + groupName + "\n";
                 }
             }
