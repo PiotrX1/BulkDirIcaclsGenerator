@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.DirectoryServices.AccountManagement;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -116,6 +117,10 @@ namespace BulkDirIcaclsGenerator
             {
                 // Wywołuje funkcję dodawanie grup
                 AddGroups(AddGroupTextBox.Text.Split(';'));
+
+                // Czyści pole tekstowe
+                AddGroupTextBox.Text = string.Empty;
+
             }
             else // Jeśli nie wczytano folderów
             {
@@ -145,12 +150,35 @@ namespace BulkDirIcaclsGenerator
             // Dla każdej podanej grupy
             foreach (string groupName in groupNames)
             {
-                // Odnajduje grupę po nazwie
-                GroupPrincipal byIdentity = GroupPrincipal.FindByIdentity(context, groupName);
+                GroupPrincipal Identity = null;
 
-                // Jeśli udało się odnaleźć
-                if (byIdentity != null)
+                // Pierwsza próba odnalezienia grupy
+                Identity = FindGroup(groupName, context);
+
+                if (Identity == null)
                 {
+                    // Jeśli szukano w domenie
+                    if(context.ContextType == ContextType.Domain)
+                    {
+                        // Zmiana na lokalne wyszukiwanie
+                        context = new PrincipalContext(ContextType.Machine);
+
+                        // Wyszukiwanie lokalnie
+                        Identity = FindGroup(groupName, context);
+
+                    }
+
+                }
+
+
+                if (Identity == null)
+                {
+                    // Wyświetla informację, że nie udało się odnaleźć grupy.
+                    OutputTextBox.Text += "Could not find group " + groupName + "\n";
+                }
+                else
+                {
+
                     // Dodaje do każdego wiersza pole w kolumnie dla danej grupy
                     foreach (var tableData in Data)
                         tableData.addColumn();
@@ -162,7 +190,7 @@ namespace BulkDirIcaclsGenerator
                     // Tworzy tam nową kolumnę i przypisuje jej wartości
                     DataGridComboBoxColumn gridComboBoxColumn = new DataGridComboBoxColumn()
                     {
-                        Header = byIdentity.Name,       // Nazwa
+                        Header = Identity.Name,       // Nazwa
                         ItemsSource = Permissions,      // Lista do wyboru
                         // Przypisanie do pola w pamięci
                         SelectedItemBinding = new System.Windows.Data.Binding("Permissions[" + (MainDataGrid.Columns.Count - 1) + "]")
@@ -171,12 +199,16 @@ namespace BulkDirIcaclsGenerator
                     // Dopisuje nową kolumnę do XAML
                     columns.Add(gridComboBoxColumn);
                 }
-                else
-                {
-                // Nie udało się odnaleźć grupy
-                    OutputTextBox.Text += "Could not find group " + groupName + "\n";
-                }
+
             }
+        }
+
+        GroupPrincipal FindGroup(string name, PrincipalContext context)
+        {
+            // Odnajduje grupę po nazwie
+            GroupPrincipal Identity = GroupPrincipal.FindByIdentity(context, name);
+
+            return Identity;
         }
 
 
@@ -362,5 +394,18 @@ namespace BulkDirIcaclsGenerator
         }
 
 
+        private void AddGroupTextBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if(e.Key == Key.Enter)
+                AddGroupsButton_Click(sender, e);
+
+        }
+
+        private void AboutHelp_Click(object sender, RoutedEventArgs e)
+        {
+            // Wyświetla informację o wersji programu
+            System.Windows.MessageBox.Show("BulkDirIcaclsGenerator v" + Assembly.GetExecutingAssembly().GetName().Version.ToString(), "About");
+
+        }
     }
 }

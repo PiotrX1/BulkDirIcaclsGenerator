@@ -34,6 +34,7 @@
                 <MenuItem Header="_Help">
                     <MenuItem Click="PermissionHelpMenuItem_Click" x:Name="PermissionHelpMenuItem" Header="Permissions"/>
                     <MenuItem Click="InherintaceHelpMenuItem_Click" x:Name="InherintaceHelpMenuItem" Header="Inheritance"/>
+                    <MenuItem x:Name="AboutHelp" Header="About" Click="AboutHelp_Click"/>
                 </MenuItem>
             </Menu>
         </DockPanel>
@@ -49,7 +50,7 @@
             <TextBlock Grid.Column="0" Grid.Row="0">
         Add groups by name (to separate use ;)
             </TextBlock>
-            <TextBox x:Name="AddGroupTextBox" Grid.Row="1"/>
+            <TextBox x:Name="AddGroupTextBox" Grid.Row="1" KeyDown="AddGroupTextBox_KeyDown"/>
             <Button Click="AddGroupsButton_Click" x:Name="AddGroupsButton" Grid.Column="1" Grid.Row="1"
               Margin="4,0,0,0">Add groups</Button>
         </Grid>
