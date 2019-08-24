@@ -173,7 +173,7 @@ namespace BulkDirIcaclsGenerator
                 GroupPrincipal Identity = null;
 
                 // Pierwsza próba odnalezienia grupy
-                Identity = FindGroup(groupName, context);
+                Identity = FindGroup(groupName.Trim(), context);
 
                 if (Identity == null)
                 {
