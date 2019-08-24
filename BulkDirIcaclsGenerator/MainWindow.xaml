@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:BulkDirIcaclsGenerator"
-        Title="Bulk Dir Icacls Generator" Height="450" Width="800" MinWidth="500" MinHeight="300">
+        Title="Bulk Dir Icacls Generator" Height="500" Width="800" MinWidth="500" MinHeight="300">
     <Grid>
         <DockPanel>
             <Menu DockPanel.Dock="Top">
@@ -40,7 +40,8 @@
         </DockPanel>
         <Grid Margin="10, 20, 10, 10" VerticalAlignment="Top">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="6*"/>
+                <ColumnDefinition Width="7*"/>
+                <ColumnDefinition Width="2*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
@@ -53,14 +54,22 @@
             <TextBox x:Name="AddGroupTextBox" Grid.Row="1" KeyDown="AddGroupTextBox_KeyDown"/>
             <Button Click="AddGroupsButton_Click" x:Name="AddGroupsButton" Grid.Column="1" Grid.Row="1"
               Margin="4,0,0,0">Add groups</Button>
+            <ComboBox x:Name="PermissionSelectorComboBox" Grid.Column="2" Grid.Row="1" Margin="4,0,0,0" IsEnabled="False" SelectionChanged="PermissionSelectorComboBox_SelectionChanged"/>
         </Grid>
         <Grid Margin="10,60,10,40">
             <Grid.RowDefinitions>
                 <RowDefinition Height="4*"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <DataGrid x:Name="MainDataGrid" AutoGenerateColumns="false" Grid.Row="0">
+            <DataGrid x:Name="MainDataGrid" AutoGenerateColumns="false" Grid.Row="0" SelectionUnit="Cell" SelectedCellsChanged="MainDataGrid_SelectedCellsChanged">
                 <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="Delete">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button x:Name="DeleteButton" Content="X" Click="DeleteButton_Click"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTextColumn Header="Path" IsReadOnly="true" Binding="{Binding Path=FullName}"/>
                 </DataGrid.Columns>
             </DataGrid>

@@ -28,10 +28,20 @@ namespace BulkDirIcaclsGenerator
         public MainWindow()
         {
             InitializeComponent();
+            PermissionSelectorComboBox.ItemsSource = Permissions;
         }
 
         // Możliwe uprawnienia do wyboru
-        private readonly string[] Permissions = { "RX", "M", "F", "R", "W" };
+        private readonly string[] _Permissions = { "RX", "M", "F", "R", "W" };
+
+        public string[] Permissions
+        {
+            get
+            {
+                return _Permissions;
+            }
+        }
+
 
         // Dane folderów
         private List<TableData> Data;
@@ -47,24 +57,34 @@ namespace BulkDirIcaclsGenerator
                 // Czyści pole tekstowe
                 OutputTextBox.Text = string.Empty;
 
-                // Pobiera listę folderów
-                List<DirectoryInfo> directoryInfos = this.GetDirectoryInfos(folderBrowserDialog.SelectedPath);
 
-                // Czyści dane tabeli
-                Data = new List<TableData>();
+                try
+                {
+                    // Pobiera listę folderów
+                    List<DirectoryInfo> directoryInfos = this.GetDirectoryInfos(folderBrowserDialog.SelectedPath);
 
-                // DLa każdego folderu dodaje wiersz tabeli
-                foreach (DirectoryInfo info in directoryInfos)
-                    Data.Add(new TableData(info));
+                    // Czyści dane tabeli
+                    Data = new List<TableData>();
 
-                // Ustawia źródło danych dla tabeli xaml
-                MainDataGrid.ItemsSource = Data;
+                    // DLa każdego folderu dodaje wiersz tabeli
+                    foreach (DirectoryInfo info in directoryInfos)
+                    {
+                        Data.Add(new TableData(info));
+                    }
 
-                // Uaktywnia przycisk zapisu wyjścia do pliku
-                SaveOutputMenuItem.IsEnabled = true;
+                    // Ustawia źródło danych dla tabeli xaml
+                    MainDataGrid.ItemsSource = Data;
 
-                // Uaktywnia przycisk wykonania komend
-                ExecuteButton.IsEnabled = true;
+                    // Uaktywnia przycisk zapisu wyjścia do pliku
+                    SaveOutputMenuItem.IsEnabled = true;
+
+                    // Uaktywnia przycisk wykonania komend
+                    ExecuteButton.IsEnabled = true;
+                }
+                catch(System.ArgumentException)
+                {
+                    // Nie wczytano poprawnie folderów
+                }
             }
 
 
@@ -187,6 +207,7 @@ namespace BulkDirIcaclsGenerator
                     // Pobiera kolumny z xaml
                     var columns = MainDataGrid.Columns;
 
+
                     // Tworzy tam nową kolumnę i przypisuje jej wartości
                     DataGridComboBoxColumn gridComboBoxColumn = new DataGridComboBoxColumn()
                     {
@@ -196,8 +217,17 @@ namespace BulkDirIcaclsGenerator
                         SelectedItemBinding = new System.Windows.Data.Binding("Permissions[" + (MainDataGrid.Columns.Count - 1) + "]")
                     };
 
+                    //DataGridTextColumn gridColumn = new DataGridTextColumn()
+                    //{
+                    //    Header = Identity.Name,       // Nazwa
+                    //    Binding = new System.Windows.Data.Binding("Permissions[" + (MainDataGrid.Columns.Count - 1) + "]")
+                    //};
+
+
+
                     // Dopisuje nową kolumnę do XAML
                     columns.Add(gridComboBoxColumn);
+                    //columns.Add(gridColumn);
                 }
 
             }
@@ -407,5 +437,89 @@ namespace BulkDirIcaclsGenerator
             System.Windows.MessageBox.Show("BulkDirIcaclsGenerator v" + Assembly.GetExecutingAssembly().GetName().Version.ToString(), "About");
 
         }
+
+        private void MainDataGrid_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
+        {
+
+            // Sprawdza każdą zaznaczoną komórkę
+            foreach(var cell in MainDataGrid.SelectedCells)
+            {
+                if(cell.Column.DisplayIndex == 0 || cell.Column.DisplayIndex == 1)
+                {
+                    // Zabezpiecza przed zaznaczeniem komórek z 2 pierwszych kolumn
+                    MainDataGrid.SelectedCells.Remove(cell);
+                }
+    
+            }
+
+            // Czyści listę masowego wyboru
+            PermissionSelectorComboBox.SelectedIndex = -1;
+            
+            // Jeśli wybrano komórki
+            if (MainDataGrid.SelectedCells.Count > 0)
+            {
+                // Uaktywnia listę wyboru
+                PermissionSelectorComboBox.IsEnabled = true;
+            }
+            else // W przeciwnym przypadki
+            {
+                // Wyłącza listę wyboru
+                PermissionSelectorComboBox.IsEnabled = false;
+            }
+        }
+
+
+
+        private void PermissionSelectorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+            // Jeśli wybór nie jest pusty
+            if (PermissionSelectorComboBox.SelectedIndex != -1)
+            {
+
+                // Dla wszystkich zaznaczonych komórek
+                foreach (var cell in MainDataGrid.SelectedCells)
+                {
+                    // Index kolumny
+                    int columnIndex = cell.Column.DisplayIndex;
+                    // Index wiersza
+                    int rowIndex = MainDataGrid.Items.IndexOf(cell.Item);
+
+                    // Przypisanie nowej wartości dla zaznaczonych komórek
+                    Data[rowIndex].Permissions[columnIndex-1] = (string)PermissionSelectorComboBox.SelectedValue;
+
+                }
+
+                // Odświeżenie widoku tabeli
+                MainDataGrid.Items.Refresh();
+            }
+        }
+
+
+        public void DeleteRow(int number)
+        {
+            // Usuwa wiersz
+            Data.RemoveAt(number);
+            // Odświeża widok
+            MainDataGrid.Items.Refresh();
+        }
+
+        /* https://stackoverflow.com/questions/34594572/how-to-get-the-row-index-in-a-datagrid-wpf-according-to-the-button-of-the-row-pr?rq=1
+         */
+        private void DeleteButton_Click(object sender, RoutedEventArgs e)
+        {
+            var row = GetParent<DataGridRow>((System.Windows.Controls.Button)sender);
+            var index = MainDataGrid.Items.IndexOf(row.Item);
+            DeleteRow(index);
+        }
+        private TargetType GetParent<TargetType>(DependencyObject o)
+            where TargetType : DependencyObject
+        {
+            if (o == null || o is TargetType) return (TargetType)o;
+            return GetParent<TargetType>(VisualTreeHelper.GetParent(o));
+        }
+
+        /* *********************************************** */
+
     }
 }
